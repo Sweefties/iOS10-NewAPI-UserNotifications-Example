@@ -7,40 +7,158 @@
 //
 
 import UIKit
+import UserNotifications
 
+
+// ********************************
+//
+// MARK: - Typealias
+//
+// ********************************
+typealias UserNotificationsExtended = AppDelegate
+
+
+// ********************************
+//
+// MARK: - App Delegate class.
+//
+// ********************************
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
+    
+    // ********************************
+    //
+    // MARK: - Properties
+    //
+    // ********************************
     var window: UIWindow?
 
-
+    // ********************************
+    //
+    // MARK: - Delegates
+    //
+    // ********************************
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        
+        // Requests the notification settings for this app.
+        UNUserNotificationCenter.current().getNotificationSettings { (settings) in
+
+            switch settings.authorizationStatus {
+            case .authorized:
+                print(settings.notificationCenterSetting)
+                break
+            case .denied:
+                print(settings.authorizationStatus)
+                // alert user, it's required for this application.
+                break
+            case .notDetermined:
+                print(settings.authorizationStatus)
+                // alert user to authorize
+                break
+            }
+        }
+        
+        // set user notifications.
+        setUserNotifications()
+        
         return true
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
-        // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-        // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
+        //..
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
-        // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-        // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+        //..
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
-        // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
+        //..
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        //..
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+        //..
     }
 
+    /// Sent to the delegate when Apple Push Notification service cannot successfully complete the registration process.
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print(error.localizedDescription)
+    }
 
 }
 
+
+extension UserNotificationsExtended {
+    
+    
+    /// Set User Notifications
+    ///
+    /// to init User Notifications Center and manage actions, categories, requests and others.. 
+    ///
+    func setUserNotifications() {
+        
+        let center = UNUserNotificationCenter.current()
+        
+        // define actions
+        let ac1 = setAction(id: UNIdentifiers.reply, title: "Reply")
+        let ac2 = setAction(id: UNIdentifiers.share, title: "Share")
+        let ac3 = setAction(id: UNIdentifiers.follow, title: "Follow")
+        let ac4 = setAction(id: UNIdentifiers.destructive, title: "Cancel", options: .destructive)
+        let ac5 = setAction(id: UNIdentifiers.direction, title: "Get Direction")
+        
+        // define categories
+        let cat1 = setCategory(identifier: UNIdentifiers.category, action: [ac1, ac2, ac3, ac4], intentIdentifiers: [])
+        let cat2 = setCategory(identifier: UNIdentifiers.customContent, action: [ac5, ac4], intentIdentifiers: [])
+        let cat3 = setCategory(identifier: UNIdentifiers.image, action: [ac2], intentIdentifiers: [], options: .allowInCarPlay)
+        
+        // Registers your app’s notification types and the custom actions that they support.
+        center.setNotificationCategories([cat1, cat2, cat3])
+        
+        // Requests authorization to interact with the user when local and remote notifications arrive.
+        center.requestAuthorization(options: [.badge, .alert , .sound]) { (success, error) in
+            print(error?.localizedDescription)
+        }
+        
+    }
+    
+    
+    /// Set User Notifications Action.
+    ///
+    /// - Parameter id:             `String` identifier string value
+    /// - Parameter title:          `String` title string value
+    /// - Parameter options:        `UNNotificationActionOptions` bevavior to the action as `OptionSet`
+    ///
+    /// - Returns:                  `UNNotificationAction`
+    ///
+    private func setAction(id: String, title: String, options: UNNotificationActionOptions = []) -> UNNotificationAction {
+        
+        let action = UNNotificationAction(identifier: id, title: title, options: options)
+
+        return action
+    }
+    
+    
+    /// Set User Notifications Category.
+    ///
+    /// - Parameter identifier:         `String`
+    /// - Parameter action:             `[UNNotificationAction]` ask to perform in response to
+    ///                                 a delivered notification
+    /// - Parameter intentIdentifiers:  `[String]` array of `String`
+    /// - Parameter options:            `[UNNotificationCategoryOptions]` handle notifications,
+    ///                                 associated with this category `OptionSet`
+    ///
+    /// - Returns:                      `UNNotificationCategory`
+    ///
+    private func setCategory(identifier: String, action:[UNNotificationAction],  intentIdentifiers: [String], options: UNNotificationCategoryOptions = []) -> UNNotificationCategory {
+        
+        let category = UNNotificationCategory(identifier: identifier, actions: action, intentIdentifiers: intentIdentifiers, options: options)
+        
+        return category
+    }
+}
